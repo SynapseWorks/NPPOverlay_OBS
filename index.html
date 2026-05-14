@@ -311,7 +311,7 @@
       display: flex;
       flex-direction: column;
       gap: clamp(12px, 1.15vw, 17px);
-      overflow: visible;
+      overflow: hidden;
     }
 
     .status-title,
@@ -386,7 +386,7 @@
     }
 
     .systems {
-      margin-top: 8px;
+      margin-top: auto;
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 9px;
@@ -503,8 +503,6 @@
 
       .side-stack {
         grid-template-rows: auto auto;
-        min-height: 0;
-        overflow-y: auto;
       }
 
       .ticker-card {
