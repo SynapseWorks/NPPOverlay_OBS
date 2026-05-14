@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Newcastle Port Pulse — Broadcast Overlay</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --bg-2: #0b1d31;
+      --panel: rgba(10, 25, 47, 0.78);
+      --panel-strong: rgba(17, 34, 64, 0.9);
+      --text: #e0e6ed;
+      --muted: #8fa7bd;
+      --primary: #64ffda;
+      --amber: #e29625;
+      --danger: #ff6b6b;
+      --line: rgba(100, 255, 218, 0.28);
+      --shadow: 0 0 40px rgba(100, 255, 218, 0.08);
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: var(--font);
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(100, 255, 218, 0.10), transparent 30%),
+        radial-gradient(circle at 80% 15%, rgba(226, 150, 37, 0.08), transparent 25%),
+        linear-gradient(135deg, var(--bg), var(--bg-2));
+      overflow: hidden;
+    }
+
+    .scanlines::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.025),
+        rgba(255,255,255,0.025) 1px,
+        transparent 1px,
+        transparent 4px
+      );
+      pointer-events: none;
+      z-index: 20;
+      mix-blend-mode: screen;
+    }
+
+    .noise {
+      position: fixed;
+      inset: 0;
+      opacity: 0.045;
+      pointer-events: none;
+      z-index: 18;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23noise)' opacity='0.7'/%3E%3C/svg%3E");
+    }
+
+    .shell {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      padding: 32px;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 24px;
+      z-index: 2;
+    }
+
+    .topbar,
+    .lower-third,
+    .side-panel,
+    .center-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .topbar {
+      border-radius: 24px;
+      padding: 18px 22px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-mark {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      border: 1px solid var(--primary);
+      display: grid;
+      place-items: center;
+      color: var(--primary);
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      box-shadow: 0 0 22px rgba(100,255,218,0.18);
+    }
+
+    .station-title {
+      font-size: clamp(1.2rem, 2vw, 2rem);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .tagline {
+      color: var(--muted);
+      font-size: 0.95rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .clock-block {
+      text-align: right;
+      min-width: 210px;
+    }
+
+    .time {
+      font-size: clamp(1.7rem, 4vw, 3.4rem);
+      color: var(--primary);
+      font-weight: 700;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .date {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 330px;
+      gap: 24px;
+      min-height: 0;
+    }
+
+    .center-card {
+      border-radius: 32px;
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .radar {
+      position: absolute;
+      width: 680px;
+      height: 680px;
+      border-radius: 50%;
+      border: 1px solid rgba(100,255,218,0.2);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      opacity: 0.45;
+    }
+
+    .radar::before,
+    .radar::after {
+      content: "";
+      position: absolute;
+      inset: 18%;
+      border-radius: 50%;
+      border: 1px solid rgba(100,255,218,0.16);
+    }
+
+    .radar::after {
+      inset: 36%;
+    }
+
+    .sweep {
+      position: absolute;
+      width: 50%;
+      height: 2px;
+      top: 50%;
+      left: 50%;
+      transform-origin: left center;
+      background: linear-gradient(90deg, rgba(100,255,218,0.7), transparent);
+      animation: sweep 8s linear infinite;
+    }
+
+    @keyframes sweep {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .program-label {
+      position: relative;
+      color: var(--amber);
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-size: 0.85rem;
+    }
+
+    .program-title {
+      position: relative;
+      margin-top: 14px;
+      max-width: 780px;
+      font-size: clamp(2.6rem, 7vw, 6.2rem);
+      line-height: 0.92;
+      font-weight: 850;
+      letter-spacing: -0.05em;
+    }
+
+    .program-note {
+      position: relative;
+      margin-top: 22px;
+      max-width: 640px;
+      color: var(--muted);
+      font-size: clamp(1rem, 1.4vw, 1.25rem);
+      line-height: 1.55;
+    }
+
+    .signal-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 28px;
+    }
+
+    .metric {
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.035);
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 6px;
+    }
+
+    .metric strong {
+      color: var(--text);
+      font-size: 1rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .side-panel {
+      border-radius: 28px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 18px;
+    }
+
+    .panel-section + .panel-section {
+      border-top: 1px solid rgba(100,255,218,0.16);
+      padding-top: 18px;
+    }
+
+    .section-title {
+      color: var(--primary);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .now-playing-title {
+      font-size: 1.25rem;
+      line-height: 1.2;
+      font-weight: 800;
+    }
+
+    .artist,
+    .small-copy {
+      color: var(--muted);
+      margin-top: 6px;
+      line-height: 1.45;
+      font-size: 0.95rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(100,255,218,0.28);
+      background: rgba(100,255,218,0.07);
+      color: var(--primary);
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 12px var(--primary);
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+
+    .lower-third {
+      border-radius: 22px;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+    }
+
+    .ticker-label {
+      height: 100%;
+      display: grid;
+      place-items: center;
+      padding: 0 20px;
+      background: rgba(226, 150, 37, 0.16);
+      color: var(--amber);
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border-right: 1px solid rgba(226,150,37,0.3);
+    }
+
+    .ticker {
+      overflow: hidden;
+      white-space: nowrap;
+      padding: 16px 0;
+    }
+
+    .ticker-track {
+      display: inline-block;
+      padding-left: 100%;
+      animation: ticker 42s linear infinite;
+      color: var(--text);
+      letter-spacing: 0.04em;
+    }
+
+    @keyframes ticker {
+      from { transform: translateX(0); }
+      to { transform: translateX(-100%); }
+    }
+
+    .hidden-page-note {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 30;
+      font-size: 0.72rem;
+      color: rgba(224,230,237,0.45);
+    }
+
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      .shell { height: auto; min-height: 100vh; padding: 18px; }
+      .topbar, .main { grid-template-columns: 1fr; flex-direction: column; align-items: flex-start; }
+      .main { display: flex; }
+      .clock-block { text-align: left; }
+      .signal-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .lower-third { grid-template-columns: 1fr; }
+      .ticker-label { padding: 12px; border-right: 0; border-bottom: 1px solid rgba(226,150,37,0.3); }
+    }
+  </style>
+</head>
+<body class="scanlines">
+  <div class="noise"></div>
+
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo-mark">NPP</div>
+        <div>
+          <h1 class="station-title">Newcastle Port Pulse</h1>
+          <p class="tagline">Your Signal on the Lakeshore</p>
+        </div>
+      </div>
+      <div class="clock-block">
+        <div id="time" class="time">00:00</div>
+        <div id="date" class="date">Loading station time</div>
+      </div>
+    </header>
+
+    <section class="main">
+      <div class="center-card">
+        <div class="radar"><div class="sweep"></div></div>
+        <div>
+          <div class="program-label">Current Program</div>
+          <div id="programTitle" class="program-title">Rainline Test Broadcast</div>
+          <p id="programNote" class="program-note">
+            Phase 1 signal test from Newcastle Port Pulse. Ambient field recordings, local atmosphere, and quiet late-night station experiments.
+          </p>
+        </div>
+
+        <div class="signal-grid">
+          <div class="metric"><span>Signal</span><strong id="signalStrength">Stable</strong></div>
+          <div class="metric"><span>Mode</span><strong id="stationMode">Setup Lab</strong></div>
+          <div class="metric"><span>Weather</span><strong id="weather">Rain / Cloud</strong></div>
+          <div class="metric"><span>Source</span><strong id="source">Studio A</strong></div>
+        </div>
+      </div>
+
+      <aside class="side-panel">
+        <div class="panel-section">
+          <div class="status-pill"><span class="pulse"></span> Live Overlay Ready</div>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-title">Now Playing</div>
+          <div id="trackTitle" class="now-playing-title">Rain Over Highway 2</div>
+          <div id="trackArtist" class="artist">Newcastle Port Pulse Field Recording</div>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-title">Up Next</div>
+          <div id="upNext" class="small-copy">Station ID • Local weather bed • Night signal ambience</div>
+        </div>
+
+        <div class="panel-section">
+          <div class="section-title">Station Note</div>
+          <div id="stationNote" class="small-copy">
+            Building the first version of an online local radio signal: quiet, useful, atmospheric, and a little mysterious.
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <footer class="lower-third">
+      <div class="ticker-label">Pulse Wire</div>
+      <div class="ticker">
+        <div id="tickerText" class="ticker-track">
+          Newcastle Port Pulse is currently in setup mode • Collecting rain, rail, lake wind, and local ambience • First test broadcasts coming soon • Root & Render Studio Lab project active •
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <div class="hidden-page-note">OBS Browser Source Prototype • GitHub Pages Ready</div>
+
+  <script>
+    const demoData = {
+      programTitle: "Rainline Test Broadcast",
+      programNote: "Phase 1 signal test from Newcastle Port Pulse. Ambient field recordings, local atmosphere, and quiet late-night station experiments.",
+      trackTitle: "Rain Over Highway 2",
+      trackArtist: "Newcastle Port Pulse Field Recording",
+      upNext: "Station ID • Local weather bed • Night signal ambience",
+      stationNote: "Building the first version of an online local radio signal: quiet, useful, atmospheric, and a little mysterious.",
+      signalStrength: "Stable",
+      stationMode: "Setup Lab",
+      weather: "Rain / Cloud",
+      source: "Studio A",
+      tickerText: "Newcastle Port Pulse is currently in setup mode • Collecting rain, rail, lake wind, and local ambience • First test broadcasts coming soon • Root & Render Studio Lab project active •"
+    };
+
+    function updateClock() {
+      const now = new Date();
+      const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      const date = now.toLocaleDateString([], {
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+        year: "numeric"
+      });
+      document.getElementById("time").textContent = time;
+      document.getElementById("date").textContent = date;
+    }
+
+    function updateOverlay(data) {
+      Object.entries(data).forEach(([key, value]) => {
+        const el = document.getElementById(key);
+        if (el) el.textContent = value;
+      });
+    }
+
+    async function loadLiveData() {
+      try {
+        const response = await fetch("./data/station-data.json", { cache: "no-store" });
+        if (!response.ok) throw new Error("No live data file found yet.");
+        const liveData = await response.json();
+        updateOverlay({ ...demoData, ...liveData });
+      } catch (error) {
+        updateOverlay(demoData);
+      }
+    }
+
+    updateClock();
+    loadLiveData();
+    setInterval(updateClock, 1000);
+    setInterval(loadLiveData, 10000);
+  </script>
+</body>
+</html>
