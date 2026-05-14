@@ -686,7 +686,63 @@
     </section>
 
     <div class="side-stack">
-    <aside class="status-card">$1
+      <aside class="status-card">
+        <div class="status-title">Signal Status</div>
+
+        <div class="status-row">
+          <div class="label">Weather Relay</div>
+          <div id="weather" class="value">11°C</div>
+          <div id="weatherNote" class="note">Light rain along the lakeshore</div>
+        </div>
+
+        <div class="status-row">
+          <div class="label">Signal Integrity</div>
+          <div id="signalStrength" class="value">Stable</div>
+          <div id="signalNote" class="note">Northshore relay preparing</div>
+        </div>
+
+        <div class="status-row">
+          <div class="label">Now Playing</div>
+          <div id="trackTitle" class="value">Rain Over Highway 2</div>
+          <div id="trackArtist" class="note">Newcastle Port Pulse Field Recording</div>
+        </div>
+
+        <div class="status-row">
+          <div class="label">Station Log</div>
+          <div id="stationNote" class="note">
+            Broadcast systems are coming online. Field recordings, weather notes, and late-night signal tests are being prepared for the first transmission.
+          </div>
+        </div>
+      </aside>
+
+      <aside class="schedule-card">
+        <div class="schedule-heading">
+          <div class="schedule-title">Broadcast Schedule</div>
+          <div class="schedule-subtitle">First signals preparing</div>
+        </div>
+
+        <div class="show-list">
+          <article class="show">
+            <h3>Signals After Dark</h3>
+            <p>Late-night weather, ambient soundscapes, local atmosphere, and quiet reflections from the north shore.</p>
+          </article>
+          <article class="show">
+            <h3>Weather Watch</h3>
+            <p>Lakeshore conditions, storm movement, fog, rain, snow, and visibility reports for quiet nights and long drives.</p>
+          </article>
+          <article class="show">
+            <h3>Night Rail</h3>
+            <p>Train ambience, late-night crossings, distant horns, and the sound of Newcastle after dark.</p>
+          </article>
+        </div>
+
+        <div class="systems">
+          <div class="system-pill"><span>Broadcast Systems</span><strong id="broadcastSystem">Preparing</strong></div>
+          <div class="system-pill"><span>Weather Relay</span><strong id="weatherRelay">Pending</strong></div>
+          <div class="system-pill"><span>Overnight Mode</span><strong id="overnightMode">Offline</strong></div>
+          <div class="system-pill"><span>SAGE Link</span><strong id="sageLink">Pending</strong></div>
+        </div>
+      </aside>
     </div>
 
     <footer class="ticker-card">
